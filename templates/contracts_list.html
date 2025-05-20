@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>قائمة العقود</title>
+</head>
+<body>
+    <h2>قائمة الموظفين للعقود</h2>
+    <table border="1">
+        <tr>
+            <th>اسم الموظف</th>
+            <th>الإدارة</th>
+            <th>الفرع</th>
+            <th>المنطقة</th>
+            <th>العملية</th>
+        </tr>
+        {% for emp in employees %}
+        <tr>
+            <td>{{ emp.name }}</td>
+            <td>{{ emp.department }}</td>
+            <td>{{ emp.branch }}</td>
+            <td>{{ emp.region }}</td>
+            <td><a href="{{ url_for('review_contract', employee_id=emp.id) }}">عرض/توقيع</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="{{ url_for('logout') }}">تسجيل خروج</a>
+</body>
+</html>

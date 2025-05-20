@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>توقيع تجديد العقد</title>
+</head>
+<body style="direction: rtl; font-family: Arial, sans-serif;">
+    <h2>توقيع تجديد عقد الموظف رقم {{ employee_id }}</h2>
+    <p>المدير: {{ manager_email }}</p>
+    <form method="post">
+        {{ form.hidden_tag() }}
+        {{ form.decision.label }}<br>
+        {% for subfield in form.decision %}
+            {{ subfield }} {{ subfield.label }}<br>
+        {% endfor %}
+        <br>
+        {{ form.submit() }}
+    </form>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul>
+            {% for category, message in messages %}
+                <li><strong>{{ category }}:</strong> {{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+</body>
+</html>

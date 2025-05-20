@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8" />
+    <title>موظفيك</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h2>مرحبا {{ manager['name'] }}</h2>
+
+    {% if message %}
+        <p style="color:red;">{{ message }}</p>
+    {% endif %}
+
+    <table border="1" cellpadding="5" cellspacing="0">
+        <thead>
+            <tr>
+                <th>كود</th>
+                <th>اسم الموظف</th>
+                <th>الوظيفة</th>
+                <th>الاداره</th>
+                <th>الفرع</th>
+                <th>تاريخ انتهاء العقد</th>
+                <th>قرار المدير المباشر</th>
+                <th>قرار الموارد البشرية</th>
+                <th>قرار مدير المنطقة</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for emp in employees %}
+            <tr>
+                <td>{{ emp['كود'] }}</td>
+                <td>{{ emp['اسم الموظف'] }}</td>
+                <td>{{ emp['الوظيفة'] }}</td>
+                <td>{{ emp['الاداره'] }}</td>
+                <td>{{ emp['الفرع'] }}</td>
+                <td>{{ emp['تاريخ انتهاء العقد'].strftime('%Y-%m-%d') if emp['تاريخ انتهاء العقد'] else '' }}</td>
+
+                <!-- قرار المدير المباشر -->
+                <td>
+                    {% if manager.role == 'manager' and not submitted %}
+                        <select name="decision_{{ emp['كود'] }}_manager" class="decision-select">
+                            <option value="">--اختر--</option>
+                            <option value="yes" {% if decisions.get((emp['كود'], 'manager')) == 'yes' %}selected{% endif %}>✔ يجدد</option>
+                            <option value="no" {% if decisions.get((emp['كود'], 'manager')) == 'no' %}selected{% endif %}>✖ لا يجدد</option>
+                        </select>
+                    {% else %}
+                        {% if decisions.get((emp['كود'], 'manager')) == 'yes' %}
+                            ✔
+                        {% elif decisions.get((emp['كود'], 'manager')) == 'no' %}
+                            ✖
+                        {% else %}
+                            -
+                        {% endif %}
+                    {% endif %}
+                </td>
+
+                <!-- قرار الموارد البشرية -->
+                <td>
+                    {% if manager.role == 'hr' and not submitted %}
+                        <select name="decision_{{ emp['كود'] }}_hr" class="decision-select">
+                            <option value="">--اختر--</option>
+                            <option value="yes" {% if decisions.get((emp['كود'], 'hr')) == 'yes' %}selected{% endif %}>✔ يجدد</option>
+                            <option value="no" {% if decisions.get((emp['كود'], 'hr')) == 'no' %}selected{% endif %}>✖ لا يجدد</option>
+                        </select>
+                    {% else %}
+                        {% if decisions.get((emp['كود'], 'hr')) == 'yes' %}
+                            ✔
+                        {% elif decisions.get((emp['كود'], 'hr')) == 'no' %}
+                            ✖
+                        {% else %}
+                            -
+                        {% endif %}
+                    {% endif %}
+                </td>
+
+                <!-- قرار مدير المنطقة -->
+                <td>
+                    {% if manager.role == 'region_manager' and not submitted %}
+                        <select name="decision_{{ emp['كود'] }}_region_manager" class="decision-select">
+                            <option value="">--اختر--</option>
+                            <option value="yes" {% if decisions.get((emp['كود'], 'region_manager')) == 'yes' %}selected{% endif %}>✔ يجدد</option>
+                            <option value="no" {% if decisions.get((emp['كود'], 'region_manager')) == 'no' %}selected{% endif %}>✖ لا يجدد</option>
+                        </select>
+                    {% else %}
+                        {% if decisions.get((emp['كود'], 'region_manager')) == 'yes' %}
+                            ✔
+                        {% elif decisions.get((emp['كود'], 'region_manager')) == 'no' %}
+                            ✖
+                        {% else %}
+                            -
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <br/>
+
+    <button type="button" id="submit-btn" {% if submitted %}disabled{% endif %}>تقديم</button>
+
+<script>
+$(document).ready(function(){
+    {% if submitted %}
+        alert("تم التقديم بالفعل ولا يمكنك تعديل القرارات.");
+        $('#submit-btn').prop('disabled', true);
+        $('.decision-select').prop('disabled', true);
+    {% endif %}
+
+    $('#submit-btn').on('click', function(){
+        var decisions = [];
+        var managerRole = "{{ manager.role }}";
+
+        $('.decision-select').each(function(){
+            var select = $(this);
+            var name = select.attr('name');
+            var value = select.val();
+
+            if(value){
+                var parts = name.split('_');
+                var employee_code = parts[1].trim();
+                // هنا نجمع كل الأجزاء من 2 وطالع للدور لأنه فيه underscore في اسم الدور
+                var role = parts.slice(2).join('_');
+
+                if(employee_code === "" || isNaN(employee_code)){
+                    alert('خطأ: كود الموظف غير صالح.');
+                    return false;  // إيقاف التكرار فوراً
+                }
+
+                if(role === managerRole){
+                    decisions.push({
+                        employee_code: employee_code,
+                        role: role,
+                        decision: value
+                    });
+                }
+            }
+        });
+
+        if(decisions.length === 0){
+            alert('لم يتم اختيار أي قرار.');
+            return;
+        }
+
+        console.log('قرارات تُرسل:', decisions);
+
+        $.ajax({
+            url: "{{ url_for('save_decision') }}",
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({decisions: decisions}),
+            success: function(res){
+                if(res.status === 'success'){
+                    alert('تم حفظ القرارات بنجاح.');
+                    location.reload();
+                } else {
+                    alert('حدث خطأ: ' + res.message);
+                }
+            },
+            error: function(xhr, status, error){
+                alert('خطأ في الاتصال بالخادم.');
+                console.error('Error details:', status, error, xhr.responseText);
+            }
+        });
+    });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8" />
+    <title>موافقة أو رفض تجديد العقد</title>
+</head>
+<body>
+    <h2>تجديد عقد الموظف: {{ employee_name }}</h2>
+    <p>تفاصيل العقد: {{ contract_details }}</p>
+
+    <form method="POST">
+        <button name="decision" value="approve" type="submit">موافقة</button>
+        <button name="decision" value="reject" type="submit">رفض</button>
+    </form>
+</body>
+</html>
